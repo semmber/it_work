@@ -1,19 +1,21 @@
 import requests
 import json
 import time
+from vacancy_scraper.patterns_4_professional_role import *
 
 def data_extractor(vacancies:dict, headers:dict):
     for vac in vacancies["items"]:
         print(vac["name"])
         id_vac = vac["id"]
         full_vac = requests.get(f"https://api.hh.ru/vacancies/{id_vac}", headers=headers).json()
-        print(json.dumps(full_vac, indent=4, ensure_ascii=False))
-        print(extract_key_skills(full_vac))
-        print(extract_salary(full_vac))
-        print(extract_professional_role(full_vac))
-        print(extractor_work_format(vac))
-        print(extractor_work_hours(vac))
-        print(extractor_experience(vac))
+        # print(json.dumps(full_vac, indent=4, ensure_ascii=False))
+        print(detect_profession(full_vac))
+        # print(extract_key_skills(full_vac))
+        # print(extract_salary(full_vac))
+        # print(extract_professional_role(full_vac))
+        # print(extractor_work_format(vac))
+        # print(extractor_work_hours(vac))
+        # print(extractor_experience(vac))
         print()
         time.sleep(0.25)
     return
@@ -67,3 +69,12 @@ def extractor_experience(vacancy:dict) -> dict | None:
         return None
     return vacancy["experience"]
 
+
+def detect_profession(vacancy:dict) -> dict | None:
+    text = vacancy["name"]
+    text = text.lower()
+    for profession, keywords in PATTERNS.items():
+        for keyword in keywords:
+            if keyword in text:
+                return {"profession": profession}
+    return None

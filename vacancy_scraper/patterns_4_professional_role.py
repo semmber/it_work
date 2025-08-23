@@ -16,7 +16,7 @@ PATTERNS = {
         "fastapi"
     ],
     "Java разработчик": [
-        "java "  # пробел в конце, чтобы не ловить JavaScript
+        "java"
     ],
     "JavaScript разработчик": [
         "javascript",
@@ -35,10 +35,14 @@ PATTERNS = {
     "QA / Тестировщик": [
         "qa",
         "тестиров",
-        "quality assurance"
+        "quality assurance",
+        "qa engineer"
     ],
     "Frontend разработчик": [
         "frontend",
         "css"
+    ],
+    "Аналитик" : [
+        "анализ данных"
     ]
 }

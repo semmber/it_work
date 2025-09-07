@@ -11,25 +11,36 @@ def normalize_text(text:str) -> str | None:
     return text
 
 
-def score_profession(name: str, desc: str, skills:list[str]) -> tuple[str, int] | None:
-    n_name, n_desc = normalize_text(name), normalize_text(desc)
-    list_skills = [s["name"].lower().strip() for s in (skills or [])]
-    n_skills = ", ".join(list_skills)
+def score_profession(name: str, desc: str, skills: list[str]) -> tuple[str, int] | None:
+    n_name = normalize_text(name)
+    n_desc = normalize_text(desc)
+
+    if skills:
+        list_skills = [normalize_text(s["name"]) for s in skills]
+    else:
+        list_skills = []
+    n_skills = " ".join(list_skills).lower()
+
     best_prof, best_score = "", 0
+
     for prof, k_words in PATTERNS.items():
         score = 0
-        for pr in prof.lower().split():
-            if pr in n_name:
-                score += 7
+        n_prof = normalize_text(prof)
+
+        if n_name:
+            name_matches = sum(1 for pr in n_prof.lower().split() if pr in n_name)
+            score += name_matches * 7
+
         for kw in k_words:
-            if bool(re.search(kw, n_name)):
+            if re.search(kw, n_name):
                 score += 7
-            if bool(re.search(kw, n_desc)):
+            if re.search(kw, n_desc):
                 score += 2
-            if bool(re.search(kw, n_skills)):
+            if re.search(kw, n_skills):
                 score += 3
+
         if score > best_score:
-            best_score = score
             best_prof = prof
-    if best_score < 7: return "", 0
-    return best_prof, best_score
+            best_score = score
+
+    return (best_prof, best_score) if best_score >= 10 else ("", 0)

@@ -17,9 +17,10 @@ def data_extractor(vacancies:dict, headers:dict):
         # print(extractor_work_format(vac))
         # print(extractor_work_hours(vac))
         # print(extractor_experience(vac))
-        print(score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac)))
-        # full_vac = json.dumps(full_vac, indent=4, ensure_ascii=False)
-        # print(full_vac)
+        # print(score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac)))
+        # print(extractor_date(full_vac))
+        full_vac = json.dumps(full_vac, indent=4, ensure_ascii=False)
+        print(full_vac)
         print()
         time.sleep(0.25)
     return
@@ -33,17 +34,18 @@ def extract_key_skills(vacancy:dict) -> list | None:
 
 
 def extract_salary(vacancy:dict) -> dict | None:
-    if vacancy["salary"] is None:
+    salary = vacancy.get("salary")
+    if salary is None or salary.get("from") < 28750:    # минимальная зарплата в спб + будет только в рублях
         return None
-    salary_from = int(vacancy["salary"]["from"])
-    salary_to = vacancy["salary"]["to"] if vacancy["salary"]["to"] is not None else 0
+    salary_from = salary.get("from")
+    salary_to = salary.get("to")
     if salary_from and salary_to:
         salary_avg = int((salary_from + salary_to) / 2)
-        return {"salary_from":salary_from, "salary_to":salary_to, "salary_avg":salary_avg}
+        return {"salary_avg":salary_avg}
     elif salary_from:
-        return {"salary_from":salary_from}
+        return {"salary_avg":salary_from}
     elif salary_to:
-        return {"salary_to":salary_to}
+        return {"salary_avg":salary_to}
     else:
         return None
 
@@ -72,3 +74,8 @@ def extractor_experience(vacancy:dict) -> dict | None:
     if vacancy["experience"] is None:
         return None
     return vacancy["experience"]
+
+def extractor_date(vacancy:dict) -> str | None:
+    if vacancy["published_at"] is None:
+        return None
+    return vacancy["published_at"]

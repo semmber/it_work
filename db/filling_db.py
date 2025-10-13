@@ -1,8 +1,6 @@
-import json
 import psycopg2
 import os
 from dotenv import load_dotenv
-from vacancy_scraper.extractor import data_extractor
 from vacancy_scraper.scrapers import get_professional_role_ids, get_vacancies
 from vacancy_scraper.extractor import data_extractor
 
@@ -16,34 +14,38 @@ def filling_db():
     role_ids = get_professional_role_ids(headers, int(os.getenv("CATEGORY_ID")))
     json_vac = get_vacancies(role_ids, int(os.getenv("AREA_ID")), headers)
     vacancies = data_extractor(json_vac, headers)
-    for vac in vacancies:
-        try:
-            conn = psycopg2.connect(
-                dbname=os.getenv("DB_NAME"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD"),
-                host=os.getenv("HOST"),
-                port=os.getenv("PORT")
-            )
-            id_vac = vac[0]
-            id_profession = get_profession_id(conn, vac[1])
-            id_experience = get_experience_id(conn, vac[2])
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("HOST"),
+            port=os.getenv("PORT")
+        )
+        for vac in vacancies:
+                id_vac = int(vac[0])
+                id_profession = get_profession_id(conn, vac[1])
+                id_experience = get_experience_id(conn, vac[2])
+                salary = vac[3]['salary_avg']
+                date = vac[4]
 
-            query = ("INSERT INTO vacancy (vacancy_id, profession_id, experience_id,"
-                     "salary_avg, created_at) VALUES (%s, %s, %s, %s, %s)", (...))
-            with (conn.cursor() as cur):
-                pass
-            conn.close()
-        except Exception as e:
-            print(e)
+                query = ("INSERT INTO vacancy (vacancy_id, profession_id, experience_id,"
+                         "salary_avg, created_at) VALUES (%s, %s, %s, %s, %s)")
+                with (conn.cursor() as cur):
+                    cur.execute(query, (id_vac, id_profession, id_experience, salary, date))
+                conn.commit()
+                conn.close()
+    except Exception as e:
+        print(e)
 
-def get_profession_id(conn, name:str):
+
+def get_profession_id(conn, name:str) -> int:
     with (conn.cursor() as cursor):
         cursor.execute("SELECT profession_id FROM profession WHERE name = %s", (name,))     # (name,) - потому что в execute передаётся кортеж, если без кортежа, то он начнёт разбивать строку на буквы
         return int(cursor.fetchall()[0][0])
 
 
-def get_experience_id(conn, exp:dict):
+def get_experience_id(conn, exp:dict) -> int:
     with (conn.cursor() as cursor):
         cursor.execute("SELECT experience_id FROM experience WHERE name = %s", (exp['name'],))
         id_ = cursor.fetchall()

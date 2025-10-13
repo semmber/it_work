@@ -15,8 +15,6 @@ headers = {
 }
 
 
-
-
 # try:
 #     conn = psycopg2.connect(
 #             dbname="it_work",

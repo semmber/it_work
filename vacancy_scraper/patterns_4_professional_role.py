@@ -65,6 +65,7 @@ PATTERNS = {
         r"\bmlops\b", r"\bpytorch\b",
         r"\bscikit\-learn\b",
         r"\btensorflow\b",
+        r"\bpython\b",
         r"\bmlflow\b"
     ],
     "Android разработчик": [
@@ -81,5 +82,46 @@ PATTERNS = {
         r"\b1c\s*программист\b",
         r"\bбухгалтерия\b", r"\bупп\b",
         r"\bуправление\s*торговлей\b"
+    ],
+    "UX/UI дизайнер": [
+        r"\bux/ui\b",
+        r"\bui/ux\b",
+        r"\bux\s*designer\b",
+        r"\bui\s*designer\b",
+        r"\bux/ui\s*дизайнер\b",
+        r"\bux\s*дизайнер\b",
+        r"\bui\s*дизайнер\b",
+        r"\bпродуктов(ый|ого)\s*дизайнер\b",
+        r"\bинтерфейсн(ый|ого)\s*дизайнер\b",
+        r"\bfigma\b",
+        r"\bsketch\b",
+        r"\badobe\s*xd\b",
+        r"\binvision\b",
+        r"\bzeplin\b",
+        r"\bwireframe\b",
+        r"\bprototype\b",
+        r"\bпрототипир(ование|овать)\b"
+    ],
+    "Аналитик данных": [
+        r"\bаналитик\s*данных\b",
+        r"\bdata\s*analyst\b",
+        r"\bbi\s*analyst\b",
+        r"\bproduct\s*analyst\b",
+        r"\bbusiness\s*analyst\b",
+        r"\bсистемн(ый|ого)\s*аналитик\b",
+        r"\bdata\s*analytics?\b",
+        r"\bsql\b",
+        r"\bexcel\b",
+        r"\bpower\s*bi\b",
+        r"\btableau\b",
+        r"\bqlik\b",
+        r"\bgoogle\s*analytics\b",
+        r"\bяндекс\s*метрик[аи]\b",
+        r"\bab[- ]?tests?\b",
+        r"\bгипотез(ы|а)\b",
+        r"\bстатистик[аи]\b",
+        r"\bpandas\b",
+        r"\bnumpy\b",
+        r"\bmatplotlib\b"
     ]
 }

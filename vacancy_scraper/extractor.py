@@ -1,41 +1,33 @@
 import requests
-import json
 import time
-from vacancy_scraper.patterns_4_professional_role import *
 from vacancy_scraper.classifier_of_profession import score_profession
 
 def data_extractor(vacancies:dict, headers:dict):
+    data = []
     for vac in vacancies["items"]:
-        print(vac["name"])
         id_vac = vac["id"]
         full_vac = requests.get(f"https://api.hh.ru/vacancies/{id_vac}", headers=headers).json()
-        # print(json.dumps(full_vac, indent=4, ensure_ascii=False))
-        # print(detect_profession(full_vac))
-        # print(extract_key_skills(full_vac))
-        # print(extract_salary(full_vac))
-        # print(extract_professional_role(full_vac))
-        # print(extractor_work_format(vac))
-        # print(extractor_work_hours(vac))
-        # print(extractor_experience(vac))
-        # print(score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac)))
-        # print(extractor_date(full_vac))
-        full_vac = json.dumps(full_vac, indent=4, ensure_ascii=False)
-        print(full_vac)
-        print()
+        profession = score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac))
+        if profession[0] != '':
+            dt = []
+            dt.extend([id_vac, profession[0], extract_experience(vac),
+                         extract_salary(full_vac), extract_date(full_vac),
+                         extract_work_format(full_vac), extract_key_skills(full_vac)])
+            data.append(dt)
         time.sleep(0.25)
-    return
+    print(data)
+    return data
 
 
 def extract_key_skills(vacancy:dict) -> list | None:
     if vacancy["key_skills"] is None:
         return None
-    skills = [skill["name"] for skill in vacancy["key_skills"]]
-    return vacancy["key_skills"]
+    return [v["name"] for v in vacancy["key_skills"]]
 
 
 def extract_salary(vacancy:dict) -> dict | None:
     salary = vacancy.get("salary")
-    if salary is None or salary.get("from") < 28750:    # минимальная зарплата в спб + будет только в рублях
+    if salary is None or int(salary.get("from") or 0) < 28750:    # минимальная зарплата в спб + будет только в рублях
         return None
     salary_from = salary.get("from")
     salary_to = salary.get("to")
@@ -50,32 +42,20 @@ def extract_salary(vacancy:dict) -> dict | None:
         return None
 
 
-def extract_professional_role(vacancy:dict) -> list | None:
-    if vacancy["professional_roles"] is None:
-        return None
-    return [pr for pr in vacancy["professional_roles"]]
-
-
-def extractor_work_format(vacancy:dict) -> list | None:
+def extract_work_format(vacancy:dict) -> list | None:
     if vacancy["work_format"] is None:
         return None
     formats = [{"id":wf["id"], "name":wf["name"].replace("\xa0", " ")} for wf in vacancy["work_format"]]
     return formats
 
 
-def extractor_work_hours(vacancy:dict) -> list | None:
-    if vacancy["working_hours"] is None:
-        return None
-    list_hours = [i["id"] for i in vacancy["working_hours"]]
-    return list_hours
-
-
-def extractor_experience(vacancy:dict) -> dict | None:
+def extract_experience(vacancy:dict) -> dict | None:
     if vacancy["experience"] is None:
         return None
     return vacancy["experience"]
 
-def extractor_date(vacancy:dict) -> str | None:
+
+def extract_date(vacancy:dict) -> str | None:
     if vacancy["published_at"] is None:
         return None
     return vacancy["published_at"]

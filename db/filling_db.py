@@ -42,7 +42,8 @@ def filling_db():
                 except Exception as e:
                     print("Пропускаю вакансию из-за:", e)
             insert_vacancy(cur, list_for_vacancies)
-            insert_work_format(cur, list_for_work_format)
+            insert_skills(cur, list_for_work_format)
+            insert_skills(cur, list_for_skills)
 
 
 
@@ -101,3 +102,24 @@ def insert_work_format(cur, list_for_work_format:list):
         extras.execute_values(cur, query, pairs, page_size=1000)
     else:
         print("Список форматов работы пуст")
+
+
+def insert_skills(cur, list_for_skills:list):
+    if list_for_skills:
+        pairs = []
+        for rows_by_vacancy in list_for_skills:
+            skills = [d for d in rows_by_vacancy[1]
+                        if rows_by_vacancy[1] is not None]
+            if skills:
+                query = ("INSERT INTO work_format (name) VALUES %s "
+                         "ON CONFLICT (name) DO NOTHING"
+                         "RETURNING skill_id")
+                extras.execute_values(cur, query, skills, page_size=1000)
+                ids = cur.fetchall()
+                pairs.extend([(rows_by_vacancy[0], id_work_format) for id_work_format in ids
+                        if ids])
+        query = ("INSERT INTO vacancy_skill (vacancy_id, skill_id) VALUES %s "
+                 "ON CONFLICT (vacancy_id, skill_id) DO NOTHING")
+        extras.execute_values(cur, query, pairs, page_size=1000)
+    else:
+        print("Список навыков пуст")

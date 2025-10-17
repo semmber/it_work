@@ -22,7 +22,7 @@ def filling_db():
             host=os.getenv("HOST"),
             port=os.getenv("PORT")
         ) as conn:
-        with conn.cursor as cur:
+        with conn.cursor() as cur:
             list_for_vacancies = []
             list_for_work_format = []
             list_for_skills = []
@@ -42,42 +42,44 @@ def filling_db():
                 except Exception as e:
                     print("Пропускаю вакансию из-за:", e)
             insert_vacancy(cur, list_for_vacancies)
-            insert_skills(cur, list_for_work_format)
+            insert_work_format(cur, list_for_work_format)
             insert_skills(cur, list_for_skills)
 
 
 
 def get_profession_id(conn, name:str) -> int:
-    with (conn.cursor() as cursor):
-        cursor.execute("SELECT profession_id FROM profession WHERE name = %s", (name,))     # (name,) - потому что в execute передаётся кортеж, если без кортежа, то он начнёт разбивать строку на буквы
-        return int(cursor.fetchall()[0][0])
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO profession (name) "
+            "VALUES (%s) "
+            "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name "
+            "RETURNING profession_id",
+            (name,)
+        )
+        return int(cursor.fetchone()[0])
 
 
 def get_experience_id(conn, exp:dict) -> int:
-    with (conn.cursor() as cursor):
-        cursor.execute("SELECT experience_id FROM experience WHERE name = %s", (exp['name'],))
-        id_ = cursor.fetchone()
-        if len(id_) == 0:
-            cursor.execute(
-                "INSERT INTO experience (code, name) VALUES (%s, %s) "
-                "ON CONFLICT (name) DO NOTHING"
-                "RETURNING experience_id",
-                (exp['id'], exp['name'])
-            )
-            id_ = cursor.fetchone()
-            conn.commit()
-        return int(id_[0])
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO experience (code, name) "
+            "VALUES (%s, %s) "
+            "ON CONFLICT (code) DO UPDATE SET code = EXCLUDED.code "
+            "RETURNING experience_id",
+            (exp.get('id'), exp.get('name'))
+        )
+        return int(cursor.fetchone()[0])
 
 
 def insert_vacancy(cur, list_for_vacancies:list):
     if list_for_vacancies:
         query = ("INSERT INTO vacancy (vacancy_id, profession_id, experience_id,"
-                 "salary_avg, created_at) VALUES %s"
-                 "ON CONFLICT (vacancy_id) DO UPDATE"
+                 "salary_avg, created_at) VALUES %s "
+                 "ON CONFLICT (vacancy_id) DO UPDATE "
                  "SET profession_id = EXCLUDED.profession_id, "
-                 "experience_id = EXCLUDED.experience_id,"
+                 "experience_id = EXCLUDED.experience_id, "
                  "salary_avg = EXCLUDED.salary_avg, "
-                 "created_at = EXCLUDED.created_a")
+                 "created_at = EXCLUDED.created_at")
         extras.execute_values(cur, query, list_for_vacancies, page_size=100)
     else:
         print("Список вакансий пуст")
@@ -91,15 +93,18 @@ def insert_work_format(cur, list_for_work_format:list):
                             if d.get('id') is not None and d.get('name') is not None]     # преобразование списка словарей в список кортежей
             if work_formats:
                 query = ("INSERT INTO work_format (code, name) VALUES %s "
-                         "ON CONFLICT (code) DO NOTHING"
+                         "ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name "
                          "RETURNING work_format_id")
                 extras.execute_values(cur, query, work_formats, page_size=100)
                 ids = cur.fetchall()
-                pairs.extend([(rows_by_vacancy[0], id_work_format) for id_work_format in ids
+                pairs.extend([(rows_by_vacancy[0], id_work_format[0]) for id_work_format in ids
                         if ids])
-        query = ("INSERT INTO vacancy_work_format (vacancy_id, work_format_id) VALUES %s "
-                 "ON CONFLICT (vacancy_id, work_format_id) DO NOTHING")
-        extras.execute_values(cur, query, pairs, page_size=1000)
+        if pairs:
+            query = ("INSERT INTO vacancy_work_format (vacancy_id, work_format_id) VALUES %s "
+                     "ON CONFLICT (vacancy_id, work_format_id) DO NOTHING")
+            extras.execute_values(cur, query, pairs, page_size=1000)
+        else:
+            print("Ни для одной профессии не был указан формат работы")
     else:
         print("Список форматов работы пуст")
 
@@ -108,18 +113,21 @@ def insert_skills(cur, list_for_skills:list):
     if list_for_skills:
         pairs = []
         for rows_by_vacancy in list_for_skills:
-            skills = [d for d in rows_by_vacancy[1]
-                        if rows_by_vacancy[1] is not None]
+            skills = [(d,) for d in rows_by_vacancy[1]]
             if skills:
-                query = ("INSERT INTO work_format (name) VALUES %s "
-                         "ON CONFLICT (name) DO NOTHING"
+                query = ("INSERT INTO skill (name) VALUES %s "
+                         "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name "
                          "RETURNING skill_id")
                 extras.execute_values(cur, query, skills, page_size=1000)
                 ids = cur.fetchall()
-                pairs.extend([(rows_by_vacancy[0], id_work_format) for id_work_format in ids
+                pairs.extend([(rows_by_vacancy[0], id_work_format[0]) for id_work_format in ids
                         if ids])
-        query = ("INSERT INTO vacancy_skill (vacancy_id, skill_id) VALUES %s "
-                 "ON CONFLICT (vacancy_id, skill_id) DO NOTHING")
-        extras.execute_values(cur, query, pairs, page_size=1000)
+        if pairs:
+            query = ("INSERT INTO vacancy_skill (vacancy_id, skill_id) VALUES %s "
+                     "ON CONFLICT (vacancy_id, skill_id) DO NOTHING")
+            extras.execute_values(cur, query, pairs, page_size=1000)
+        else:
+            print("Ни для одной вакансии не были прописаны ключевые навыки")
     else:
         print("Список навыков пуст")
+        return

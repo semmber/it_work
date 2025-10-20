@@ -16,7 +16,7 @@ def score_profession(name: str, desc: str, skills: list[str]) -> tuple[str, int]
     n_desc = normalize_text(desc)
 
     if skills:
-        list_skills = [normalize_text(s) for s in skills]
+        list_skills = [normalize_text(s[0]) for s in skills]
     else:
         list_skills = []
     n_skills = " ".join(list_skills).lower()

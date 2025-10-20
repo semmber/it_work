@@ -28,11 +28,12 @@ def filling_db():
             list_for_skills = []
             for vac in vacancies:
                 try:
-                    id_vac = int(vac[0])
+                    id_vac = vac[0]
                     id_profession = get_profession_id(conn, vac[1])
                     id_experience = get_experience_id(conn, vac[2])
                     salary = (vac[3] or {}).get('salary_avg')
                     date = vac[4]
+
                     work_format = vac[5]
                     skills = vac[6]
 
@@ -89,8 +90,7 @@ def insert_work_format(cur, list_for_work_format:list):
     if list_for_work_format:
         pairs = []
         for rows_by_vacancy in list_for_work_format:
-            work_formats = [(d.get('id'), d.get('name')) for d in rows_by_vacancy[1]
-                            if d.get('id') is not None and d.get('name') is not None]     # преобразование списка словарей в список кортежей
+            work_formats = rows_by_vacancy[1]
             if work_formats:
                 query = ("INSERT INTO work_format (code, name) VALUES %s "
                          "ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name "
@@ -113,7 +113,7 @@ def insert_skills(cur, list_for_skills:list):
     if list_for_skills:
         pairs = []
         for rows_by_vacancy in list_for_skills:
-            skills = [(d,) for d in rows_by_vacancy[1]]
+            skills = rows_by_vacancy[1]
             if skills:
                 query = ("INSERT INTO skill (name) VALUES %s "
                          "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name "
@@ -130,4 +130,3 @@ def insert_skills(cur, list_for_skills:list):
             print("Ни для одной вакансии не были прописаны ключевые навыки")
     else:
         print("Список навыков пуст")
-        return

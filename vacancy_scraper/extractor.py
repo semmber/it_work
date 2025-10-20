@@ -5,7 +5,7 @@ from vacancy_scraper.classifier_of_profession import score_profession
 def data_extractor(vacancies:dict, headers:dict):
     data = []
     for vac in vacancies["items"]:
-        id_vac = vac["id"]
+        id_vac = int(vac["id"])
         full_vac = requests.get(f"https://api.hh.ru/vacancies/{id_vac}", headers=headers).json()
         profession = score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac))
         if profession[0] != '':
@@ -22,7 +22,7 @@ def data_extractor(vacancies:dict, headers:dict):
 def extract_key_skills(vacancy:dict) -> list | None:
     if vacancy["key_skills"] is None:
         return None
-    return [v["name"] for v in vacancy["key_skills"]]
+    return [(v["name"],) for v in vacancy["key_skills"]]
 
 
 def extract_salary(vacancy:dict) -> dict | None:
@@ -45,7 +45,7 @@ def extract_salary(vacancy:dict) -> dict | None:
 def extract_work_format(vacancy:dict) -> list | None:
     if vacancy["work_format"] is None:
         return None
-    formats = [{"id":wf["id"], "name":wf["name"].replace("\xa0", " ")} for wf in vacancy["work_format"]]
+    formats = [(wf["id"], wf["name"].replace("\xa0", " ")) for wf in vacancy["work_format"]]
     return formats
 
 

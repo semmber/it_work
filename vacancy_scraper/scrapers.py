@@ -15,7 +15,7 @@ def get_professional_role_ids(headers:dict, category_id:int) -> list:
 def get_vacancies(role_ids:list, area_id:int, headers:dict) -> dict:
     params = {
         "area": area_id,
-        "per_page": 15,
+        "per_page": 30,
         "page": 0,
         "professional_role": role_ids,
     }

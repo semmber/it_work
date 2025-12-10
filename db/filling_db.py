@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from vacancy_scraper.scrapers import get_professional_role_ids, get_vacancies
 from vacancy_scraper.extractor import data_extractor
+from . import get_connection
 
 load_dotenv()
 
@@ -15,13 +16,7 @@ def filling_db():
     role_ids = get_professional_role_ids(headers, int(os.getenv("CATEGORY_ID")))
     json_vac = get_vacancies(role_ids, int(os.getenv("AREA_ID")), headers)
     vacancies = data_extractor(json_vac, headers)
-    with psycopg2.connect(
-            dbname=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            host=os.getenv("HOST"),
-            port=os.getenv("PORT")
-        ) as conn:
+    with get_connection() as conn:
         with conn.cursor() as cur:
             list_for_vacancies = []
             list_for_work_format = []

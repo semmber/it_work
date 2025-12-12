@@ -8,7 +8,7 @@ vacancies = r.get_all_vacancies()  # list[dict]
 df = pd.DataFrame(vacancies)
 
 st.subheader("Сырые данные")
-st.write(df.head())
+st.dataframe(df)
 
 st.subheader("Линейный график")
-st.line_chart(df, x="salary_avg", y="profession_id")
+st.line_chart(df, y="salary_avg", x="profession_id")

@@ -1,4 +1,6 @@
+import json
 from psycopg2.extras import RealDictCursor
+import pandas as pd
 from . import get_connection
 
 # Получение чистых данных их БД
@@ -67,3 +69,86 @@ def create_report_config(data: dict):
             data,
         )
         return cur.fetchone()["id"]
+
+
+# ТЕСТ
+
+def fetch_report_configs(conn, only_active: bool = True) -> pd.DataFrame:
+    sql = """
+        SELECT
+            id,
+            name,
+            description,
+            chart_type,
+            base_table,
+            x_field,
+            y_agg_func,
+            y_field,
+            filters_json,
+            group_by_period,
+            is_active
+        FROM report_configs
+        WHERE (%s = false) OR (is_active = true)
+        ORDER BY name;
+    """
+    return pd.read_sql(sql, conn, params=(only_active,))
+
+
+def insert_report_config(
+    conn,
+    name: str,
+    description: str | None,
+    chart_type: str,
+    base_table: str,
+    x_field: str,
+    y_agg_func: str,
+    y_field: str | None = None,
+    filters_json: dict | list | str | None = None,
+    group_by_period: str | None = None,
+) -> int:
+    """
+    filters_json можно передавать:
+    - dict/list (рекомендовано) — будет автоматически json.dumps
+    - str (уже готовый JSON)
+    - None
+    """
+    if isinstance(filters_json, (dict, list)):
+        filters_json = json.dumps(filters_json)
+
+    sql = """
+        INSERT INTO report_configs(
+            name, description, chart_type, base_table, x_field,
+            y_agg_func, y_field, filters_json, group_by_period, is_active
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, true)
+        RETURNING id;
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            sql,
+            (
+                name,
+                description,
+                chart_type,
+                base_table,
+                x_field,
+                y_agg_func,
+                y_field,
+                filters_json,
+                group_by_period,
+            ),
+        )
+        new_id = cur.fetchone()[0]
+    conn.commit()
+    return new_id
+
+
+def deactivate_report_config(conn, config_id: int) -> None:
+    sql = "UPDATE report_configs SET is_active = false WHERE id = %s;"
+    with conn.cursor() as cur:
+        cur.execute(sql, (config_id,))
+    conn.commit()
+
+
+def run_sql(conn, sql: str, params=None) -> pd.DataFrame:
+    return pd.read_sql(sql, conn, params=params)

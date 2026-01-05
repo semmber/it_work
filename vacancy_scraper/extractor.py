@@ -2,9 +2,9 @@ import requests
 import time
 from vacancy_scraper.classifier_of_profession import score_profession
 
-def data_extractor(vacancies:dict, headers:dict):
+def data_extractor(vacancies:list, headers:dict):
     data = []
-    for vac in vacancies["items"]:
+    for vac in vacancies:
         id_vac = int(vac["id"])
         full_vac = requests.get(f"https://api.hh.ru/vacancies/{id_vac}", headers=headers).json()
         profession = score_profession(full_vac["name"], full_vac["description"], extract_key_skills(full_vac))

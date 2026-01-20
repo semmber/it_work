@@ -1,4 +1,3 @@
-import psycopg2
 from psycopg2 import extras
 import os
 from dotenv import load_dotenv
@@ -9,7 +8,7 @@ from . import get_connection
 load_dotenv()
 
 headers = {
-    "User-Agent": "it_work_project/0.1 (contact: sillabika@gmail.com)"
+    "User-Agent": os.getenv("HH_USER_AGENT", "it_work_project/0.1")
 }
 
 def filling_db():

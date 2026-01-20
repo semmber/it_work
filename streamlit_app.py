@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import json
 from typing import Any
+import ast
 
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+from streamlit.runtime.state.query_params import process_query_params
 
 from db import get_connection
 from db.repositories import (
@@ -95,6 +97,25 @@ def _coerce_filters_value(op: str, value_text: str) -> Any:
         return parts
     return v
 
+def _unwrap_one(x: Any) -> Any:
+    # список с одним элементом -> элемент
+    if isinstance(x, list) and len(x) == 1:
+        return x[0]
+
+    # строка вида "['=']" -> "="
+    if isinstance(x, str):
+        s = x.strip()
+        if s.startswith("[") and s.endswith("]"):
+            try:
+                parsed = ast.literal_eval(s)
+                if isinstance(parsed, list) and len(parsed) == 1:
+                    return parsed[0]
+            except Exception:
+                pass
+        return s
+
+    return x
+
 def _filters_editor(initial: list[dict], allowed_fields: list[str]) -> list[dict]:
     """
     Удобный редактор фильтров.
@@ -122,9 +143,13 @@ def _filters_editor(initial: list[dict], allowed_fields: list[str]) -> list[dict
 
     out: list[dict] = []
     for _, row in edited.iterrows():
-        field = str(row.get("field") or "").strip()
-        op = str(row.get("op") or "").strip()
-        value_raw = str(row.get("value") or "").strip()
+        field = _unwrap_one(row.get("field"))
+        op = _unwrap_one(row.get("op"))
+        value_raw = _unwrap_one(row.get("value"))
+        field = str(field or "").strip()
+        op = str(op or "").strip()
+        value_raw = str(value_raw or "").strip()
+        print(value_raw)
         if not field or not op or not value_raw:
             continue
         out.append({"field": field, "op": op, "value": _coerce_filters_value(op, value_raw)})
